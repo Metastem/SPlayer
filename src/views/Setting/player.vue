@@ -1,234 +1,216 @@
 <template>
-  <div class="set-player">
+  <div class="set-type">
+    <n-h3 prefix="bar"> 播放 </n-h3>
+    <n-card class="set-item">
+      <div class="name">
+        启动时自动播放
+        <n-text class="tip">
+          {{ checkPlatform.electron() ? "程序启动时自动播放上次歌曲" : "客户端独占功能" }}
+        </n-text>
+      </div>
+      <n-switch v-model:value="autoPlay" :disabled="!checkPlatform.electron()" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        记忆上次播放位置
+        <n-text v-if="autoPlay" class="tip"> 与自动播放相冲突，已禁用 </n-text>
+      </div>
+      <n-switch v-model:value="memorySeek" :disabled="autoPlay" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        音乐资源自动缓存
+        <n-text class="tip"> 可能会造成加载缓慢，将在下一首播放或刷新时生效 </n-text>
+      </div>
+      <n-switch v-model:value="useMusicCache" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">音乐渐入渐出</div>
+      <n-switch v-model:value="songVolumeFade" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        播放全部搜索歌曲
+        <n-text class="tip"> 在播放搜索页面上的歌曲时，是否同时播放所有搜索结果中的歌曲 </n-text>
+      </div>
+      <n-switch v-model:value="playSearch" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        在线播放音质
+        <n-text class="tip">
+          {{ songLevelData[songLevel].tip }}
+        </n-text>
+      </div>
+      <n-select v-model:value="songLevel" :options="Object.values(songLevelData)" class="set" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        底栏歌词显示
+        <n-text class="tip">是否在播放时将歌手信息更改为歌词</n-text>
+      </div>
+      <n-switch v-model:value="bottomLyricShow" :round="false" />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">显示播放列表歌曲数量</div>
+      <n-switch v-model:value="showPlaylistCount" :round="false" />
+    </n-card>
     <n-card class="set-item">
       <div class="name">
         播放器样式
-        <span class="tip">播放器左侧功能区样式</span>
+        <n-text class="tip"> 播放器左侧区域样式 </n-text>
       </div>
       <n-select
+        v-model:value="playCoverType"
+        :options="[
+          {
+            label: '封面模式',
+            value: 'cover',
+          },
+          {
+            label: '唱片模式',
+            value: 'record',
+          },
+        ]"
         class="set"
-        v-model:value="playerStyle"
-        :options="playerStyleOptions"
       />
     </n-card>
     <n-card class="set-item">
       <div class="name">
         播放背景样式
-        <span class="tip">{{
-          backgroundImageShow === "blur"
-            ? "将专辑封面模糊显示"
-            : "提取专辑主色作为背景颜色"
-        }}</span>
+        <n-text class="tip">
+          {{
+            playerBackgroundType === "animation"
+              ? "流体效果，较消耗性能，请谨慎开启"
+              : playerBackgroundType === "blur"
+                ? "将封面模糊处理为背景"
+                : "提取封面主色为渐变色"
+          }}
+        </n-text>
       </div>
       <n-select
+        v-model:value="playerBackgroundType"
+        :options="[
+          {
+            label: '流体效果',
+            value: 'animation',
+          },
+          {
+            label: '封面模糊',
+            value: 'blur',
+          },
+          {
+            label: '主色渐变',
+            value: 'gradient',
+          },
+          {
+            label: '无背景',
+            value: 'none',
+          },
+        ]"
         class="set"
-        v-model:value="backgroundImageShow"
-        :options="backgroundImageShowOptions"
       />
     </n-card>
     <n-card class="set-item">
       <div class="name">
-        显示歌词翻译
-        <span class="tip">是否在具有翻译歌词时显示</span>
-      </div>
-      <n-switch v-model:value="showTransl" :round="false" />
-    </n-card>
-    <n-card class="set-item">
-      <div class="name">
-        显示歌词音译
-        <span class="tip">是否在具有音译歌词时显示</span>
-      </div>
-      <n-switch v-model:value="showRoma" :round="false" />
-    </n-card>
-    <n-card class="set-item">
-      <div class="name">
-        显示前奏等待
-        <span class="tip">部分歌曲前奏可能存在显示错误</span>
+        显示前奏倒计时
+        <n-text class="tip">部分歌曲前奏可能存在显示错误</n-text>
       </div>
       <n-switch v-model:value="countDownShow" :round="false" />
     </n-card>
     <n-card class="set-item">
       <div class="name">
-        显示逐字歌词
-        <span class="tip">是否在歌曲具有逐字歌词时显示，实验性功能</span>
+        尝试替换无法播放的歌曲
+        <n-text class="tip">
+          {{ checkPlatform.electron() ? "可能会造成音乐与原曲不符" : "客户端独占功能" }}
+        </n-text>
       </div>
-      <n-switch v-model:value="showYrc" :round="false" />
+      <n-switch v-model:value="useUnmServer" :disabled="!checkPlatform.electron()" :round="false" />
     </n-card>
     <n-card class="set-item">
       <div class="name">
-        智能暂停滚动
-        <span class="tip">鼠标移入歌词区域是否暂停滚动</span>
-      </div>
-      <n-switch v-model:value="lrcMousePause" :round="false" />
-    </n-card>
-    <n-card class="set-item">
-      <div class="name">
-        歌词滚动位置
-        <span class="tip">歌词高亮时所处的位置</span>
-      </div>
-      <n-select
-        class="set"
-        v-model:value="lyricsBlock"
-        :options="lyricsBlockOptions"
-      />
-    </n-card>
-    <n-card
-      class="set-item"
-      :content-style="{
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-      }"
-    >
-      <div class="name">歌词文本大小</div>
-      <n-slider
-        v-model:value="lyricsFontSize"
-        :tooltip="false"
-        :max="4"
-        :min="3"
-        :step="0.01"
-        :marks="{
-          3: '最小',
-          3.6: '默认',
-          4: '最大',
-        }"
-      />
-      <div :class="lyricsBlur ? 'more blur' : 'more'">
-        <div
-          v-for="n in 3"
-          :key="n"
-          :class="n === 2 ? 'lrc on' : 'lrc'"
-          :style="{
-            margin: n === 2 ? '12px 0' : null,
-            alignItems: lyricsPosition == 'center' ? 'center' : null,
-            transformOrigin:
-              lyricsPosition == 'center' ? 'center' : 'center left',
-          }"
-        >
-          <span :style="{ fontSize: lyricsFontSize + 'vh' }"
-            >这是一句歌词
-          </span>
-          <span :style="{ fontSize: lyricsFontSize - 0.4 + 'vh' }"
-            >This is a lyric
-          </span>
+        <div class="dev">
+          显示音乐频谱
+          <n-tag :bordered="false" round size="small" type="warning">
+            开发中
+            <template #icon>
+              <n-icon>
+                <SvgIcon icon="code" />
+              </n-icon>
+            </template>
+          </n-tag>
         </div>
+        <n-text class="tip">
+          {{
+            showSpectrums
+              ? "开启音乐频谱会极大影响性能，如遇问题请关闭"
+              : "是否在播放器底部显示音乐频谱"
+          }}
+        </n-text>
       </div>
+      <n-switch v-model:value="showSpectrums" :round="false" />
     </n-card>
-    <n-card class="set-item">
-      <div class="name">默认歌词位置</div>
-      <n-select
-        class="set"
-        v-model:value="lyricsPosition"
-        :options="lyricsPositionOptions"
-      />
-    </n-card>
-    <n-card class="set-item">
-      <div class="name">
-        歌词模糊
-        <span class="tip">未播放或已播放歌词模糊显示，实验性功能</span>
-      </div>
-      <n-switch v-model:value="lyricsBlur" :round="false" />
-    </n-card>
-    <!-- <n-card class="set-item">
-      <div class="name">
-        显示音乐频谱
-        <span class="tip">可能会导致一些意想不到的后果，实验性功能</span>
-      </div>
-      <n-switch
-        v-model:value="musicFrequency"
-        :round="false"
-        @click="changeMusicFrequency"
-      />
-    </n-card> -->
   </div>
 </template>
 
 <script setup>
 import { storeToRefs } from "pinia";
-import { settingStore } from "@/store";
+import { siteSettings } from "@/stores";
+import { checkPlatform } from "@/utils/helper";
 
-const setting = settingStore();
+const settings = siteSettings();
 const {
-  showTransl,
-  lyricsPosition,
-  playerStyle,
-  musicFrequency,
-  lyricsFontSize,
-  lyricsBlock,
-  lyricsBlur,
-  lrcMousePause,
-  showYrc,
-  showRoma,
-  backgroundImageShow,
+  songVolumeFade,
+  autoPlay,
   countDownShow,
-} = storeToRefs(setting);
+  playerBackgroundType,
+  useUnmServer,
+  songLevel,
+  bottomLyricShow,
+  memorySeek,
+  playCoverType,
+  playSearch,
+  showPlaylistCount,
+  showSpectrums,
+  useMusicCache,
+} = storeToRefs(settings);
 
-// 歌词位置
-const lyricsPositionOptions = [
-  {
-    label: "居左",
-    value: "left",
+// 音质数据
+const songLevelData = {
+  standard: {
+    label: "标准音质",
+    tip: "标准音质 128kbps",
+    value: "standard",
   },
-  {
-    label: "居中",
-    value: "center",
+  higher: {
+    label: "较高音质",
+    tip: "较高音质 328kbps",
+    value: "higher",
   },
-];
-
-// 歌词滚动位置
-const lyricsBlockOptions = [
-  {
-    label: "靠近顶部",
-    value: "start",
+  exhigh: {
+    label: "极高 HQ",
+    tip: "近 CD 品质的细节体验，最高 320kbps",
+    value: "exhigh",
   },
-  {
-    label: "水平居中",
-    value: "center",
+  lossless: {
+    label: "无损 SQ",
+    tip: "高保真无损音质，最高 48kHz/16bit",
+    value: "lossless",
   },
-];
-
-// 播放器样式
-const playerStyleOptions = [
-  {
-    label: "封面模式",
-    value: "cover",
+  hires: {
+    label: "高清臻音 Spatial Audio",
+    tip: "环绕声体验，声音听感增强，96kHz/24bit",
+    value: "hires",
   },
-  {
-    label: "唱片模式",
-    value: "record",
+  jymaster: {
+    label: "超清母带 Master",
+    tip: "还原音频细节，192kHz/24bit",
+    value: "jymaster",
   },
-];
-
-// 播放背景类型
-const backgroundImageShowOptions = [
-  {
-    label: "封面主色",
-    value: "solid",
+  sky: {
+    label: "沉浸环绕声 Surround Audio",
+    tip: "沉浸式体验，最高 5.1 声道",
+    value: "sky",
   },
-  {
-    label: "封面模糊",
-    value: "blur",
-  },
-];
-
-// 音乐频谱提醒
-// const changeMusicFrequency = () => {
-//   if (musicFrequency.value) {
-//     $dialog.warning({
-//       class: "s-dialog",
-//       title: "实验性功能",
-//       content: "确认开启音乐频谱？将在重启应用后生效",
-//       positiveText: "开启",
-//       negativeText: "取消",
-//       onMaskClick: () => {
-//         musicFrequency.value = false;
-//       },
-//       onPositiveClick: () => {
-//         musicFrequency.value = true;
-//       },
-//       onNegativeClick: () => {
-//         musicFrequency.value = false;
-//       },
-//     });
-//   }
-// };
+};
 </script>
